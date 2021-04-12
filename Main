@@ -1,0 +1,174 @@
+# coding=utf-8
+from pykeyboard import PyKeyboard
+from pymouse import PyMouse
+import time
+import pyHook
+import pythoncom
+import xlrd
+import xlwt
+import pyperclip
+from pynput import mouse, keyboard
+import threading
+import sys
+import re
+from openpyxl import Workbook, load_workbook
+
+
+
+
+
+
+def Quit():
+    global end
+    end = True
+
+
+
+
+def saveToExcel(code,name,feature,unit,value):
+    zongworkbook = xlrd.open_workbook(zongExcelUrl)
+    table_zong= zongworkbook.sheets()[0]
+    rowCount = table_zong.nrows
+
+
+    print('开始存储-------'+name)
+    #saveworkbook = xlrd.open_workbook(saveExcelUrl)
+    #wb = excel_copy(saveworkbook)  # 利用xlutils.copy下的copy函数复制
+    wb= load_workbook(filename=zongExcelUrl)
+    worksheet=wb.active
+    worksheet=wb['Sheet1']
+
+
+
+    global rowMaxCount
+    #print(rowMaxCount)
+    worksheet.cell(row=rowMaxCount+1,column=1,value=code)
+    worksheet.cell(row=rowMaxCount+1,column=2,value=name)
+    worksheet.cell(row=rowMaxCount+1,column=3,value=feature)
+    worksheet.cell(row=rowMaxCount+1,column=4,value=unit)
+    worksheet.cell(row=rowMaxCount+1,column=5,value=value)
+
+
+    wb.save(zongExcelUrl)
+    rowMaxCount=rowMaxCount+1
+
+def Do():
+
+    global start
+    if start:
+        #dodoododododododoodododododoodododododoododododododododo
+
+        print('start')
+        datas = []
+        excel = xlrd.open_workbook(excelUrl)
+        table = excel.sheets()[0]
+        rowCount = table.nrows
+        colCount = table.ncols
+        for i in range(rowCount):
+            index=str(table.cell_value(i,1))
+            feature = str(table.cell_value(i, 6))
+            code= str(table.cell_value(i, 4))
+            name=str(table.cell_value(i,5))
+            unitCount=str(table.cell_value(i,9))
+            unit=str(table.cell_value(i,7))
+            isEmptyCai=True
+            if(index!=''):
+                isEmptyCai=False
+            if('-' in code):
+                isEmptyCai=False
+            if(feature!=''):
+                isEmptyCai=False
+            if(name==''):
+                isEmptyCai=False
+            if(code==''):
+                isEmptyCai=False
+
+            if(isEmptyCai):
+                kong=float(table.cell_value(i-2,11))
+                zong=float(table.cell_value(i-2,10))
+                value=(kong*0.862-zong)/float(unitCount)
+                if(value<=0):
+                    continue
+                splitStrList=name.split(' ')
+                name1=name
+                name2=''
+                if('电梯轿厢专用彩色摄像' in name):
+                    print(1)
+                if(len(splitStrList)==2):
+                    name1=splitStrList[0]
+                    name2=splitStrList[1]
+                elif(len(splitStrList)>2):
+                    name1=splitStrList[0]
+                    name2=splitStrList[1]
+                    for i in range(2,len(splitStrList)):
+                        name2=name2+' ' +splitStrList[i]
+
+                saveToExcel(code,name1,name2,unit,value)
+
+
+
+
+    start=False
+    print('完成！！！！！')
+
+
+
+
+
+# 我的代码
+def onpressed(Key):
+    while True:
+        # print(Key)
+        if (Key == keyboard.Key.caps_lock):  # 开始
+            global start
+            start = True
+            print('go')
+
+        if (Key == keyboard.Key.f3):  # 结束
+            sys.exit()
+
+        global end
+        if (end):
+            sys.exit()
+        return True
+
+
+def main():
+    while True:
+        # 主程序在这
+        Do()
+
+
+if __name__ == '__main__':
+    k = PyKeyboard()
+    m = PyMouse()
+    end = False
+    start = False
+    excelUrl = r"C:\Users\Administrator\Desktop\P1-分部分项.xls"#to do-------------
+    zongExcelUrl=r"C:\Users\Administrator\Desktop\zong.xlsx"#过滤出的名称和特征
+
+    excel = xlrd.open_workbook(excelUrl)
+    caiworkbook = xlrd.open_workbook(zongExcelUrl)
+    rowMaxCount = caiworkbook.sheets()[0].nrows
+
+    table = excel.sheets()[0]
+    rowCount = table.nrows
+
+    threads = []
+    t2 = threading.Thread(target=main, args=())
+    threads.append(t2)
+    for t in threads:
+        t.setDaemon(True)
+        t.start()
+    print('press Capital to start')
+    print('桌面新建zong.xlsx,运行结束改成xls')
+    with keyboard.Listener(on_press=onpressed) as listener:
+        listener.join()
+
+
+
+
+
+
+
+
